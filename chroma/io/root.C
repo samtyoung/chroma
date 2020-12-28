@@ -86,7 +86,6 @@ void clear_steps(Vertex *vtx) {
   vtx->step_dz.resize(0);
   vtx->step_ke.resize(0);
   vtx->step_edep.resize(0);
-  vtx->step_qedep.resize(0);
 }
 
 void fill_steps(Vertex *vtx, unsigned int nsteps, double *x, double *y, double *z,

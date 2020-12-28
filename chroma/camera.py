@@ -60,32 +60,7 @@ def encode_movie(dir):
     print('movie saved to %s.' % path)
 
 class Camera(multiprocessing.Process):
-    """The camera class is used to render a Geometry object.
-    
-    CONTROLS:
-       - KEYDOWN + LALT/RALT: Change motion to be course, find, or superfine
-       - F6: Reset location
-       - F7: No clue
-       - F11: Toggle fullscreen
-       - ESC: Exit visualization
-       - =: Add to alpha depth
-       - -: Subtract from alpha depth
-       - PAGEDOWN: Go down a layer
-       - PAGEUP: Go up a layer
-       - 3: Turn on and off 3D
-       - g: Turn on and off green magenta (3d?)
-       - F12: Screenshot
-       - F5: Not sure
-       - m: Make a movie
-  EVENTVIEWER CONTROLS:
-       - p: Change photon display mode (none, beg, end)
-       - t: Change track display mode (none, geant4, chroma, both)
-       - Right Arrow: Next event
-       - Left Arrow: Previous event
-       - Period: Change PMT coloring display mode (geo, charge, time, hit, dichroicon)
-       - s: Toggle sum mode
-    
-    """
+    "The camera class is used to render a Geometry object."
     def __init__(self, geometry, size=(800,600), device_id=None, background=0x00000000):
         '''
         background is a 0xAARRGGBB 32bit color to use for points at infinity. alpha=255 is opaque

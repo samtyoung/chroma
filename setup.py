@@ -5,13 +5,13 @@ import os
 libraries = ['boost_python','boost_numpy']
 extra_objects = []
 
-if 'VIRTUAL_ENV' in os.environ:
+if 'CONDA_PREFIX' in os.environ:
     # use local copy of boost libs
-    boost_lib = os.path.join(os.environ['VIRTUAL_ENV'],'lib','libboost_python.so')
+    boost_lib = os.path.join(os.environ['CONDA_PREFIX'],'lib','libboost_python.so')
     if os.path.exists(boost_lib):
         extra_objects.append(boost_lib)
         libraries.remove('boost_python')
-    boost_lib = os.path.join(os.environ['VIRTUAL_ENV'],'lib','libboost_numpy.so')
+    boost_lib = os.path.join(os.environ['CONDA_PREFIX'],'lib','libboost_numpy.so')
     if os.path.exists(boost_lib):
         extra_objects.append(boost_lib)
         libraries.remove('boost_numpy')
@@ -42,8 +42,8 @@ include_dirs=['src']
 
 #####
 
-if 'VIRTUAL_ENV' in os.environ:
-    include_dirs.append(os.path.join(os.environ['VIRTUAL_ENV'], 'include'))
+if 'CONDA_PREFIX' in os.environ:
+    include_dirs.append(os.path.join(os.environ['CONDA_PREFIX'], 'include'))
 try:
     import numpy.distutils
     include_dirs += numpy.distutils.misc_util.get_numpy_include_dirs()
