@@ -771,12 +771,14 @@ class EventViewer(Camera):
             photons_max_steps truncates all photon tracks to that number of steps
             photons_only_type can be set to 'cher', 'scint', or 'reemit' 
             photons_detected_only will show only detected photon tracks 
-            photons_track_size controls the track size of the photons'''
+            photons_track_size controls the track size of the photons
+            dichroic_cut_on is the cut-on wavelength of dichroic filters (used to debug bulk_reemit leak)'''
         self.photons_max = 1000
         self.photons_max_steps = 20
         self.photons_only_type = None
         self.photons_detected_only = False
         self.photons_track_size = 0.1
+        self.dichroic_cut_on = None
 
     def render_photon_track(self,geometry,photon_track,sz=1.0,color='wavelength'):
         origin = photon_track.pos[:-1]
@@ -889,25 +891,30 @@ class EventViewer(Camera):
             scintillation = np.asarray([has(track.flags[0],event.SCINTILLATION) and not has(track.flags[-1],event.BULK_REEMIT) for track in tracks])
             reemission = np.asarray([has(track.flags[-1],event.BULK_REEMIT) for track in tracks])
             if self.photons_only_type is not None:
-                def select_track(tracks,flag):
+                def select_track(tracks,flag,wv=None):
                     if self.tracks_mode == 'full':
                         return None
                     else:
                         select_full = []
+                        if wv: 
+                            print(f'Only showing tracks < {wv}nm')
                         for track in tracks:
                                     s = []
-                                    for t in track.flags:
-                                        s.append(has(t,event.BULK_REEMIT))
+                                    for t,w in zip(track.flags,track.wavelengths):
+                                        if wv:
+                                            s.append(has(t,event.BULK_REEMIT) if w<wv else False) # let's only look at undetectable wavelengths
+                                        else:
+                                            s.append(has(t,event.BULK_REEMIT))
                                     select_full.append(s)
                         return select_full
                 if self.photons_only_type == 'cher':
-                    selector_full = select_track(tracks,event.CHEREKOV)  # returns as None if tracks_mode is full
+                    selector_full = select_track(tracks,event.CHEREKOV,wv=self.dichroic_cut_on)  # returns as None if tracks_mode is full
                     selector = cherenkov
                 elif self.photons_only_type == 'scint':
-                    selector_full = select_track(tracks,event.SCINTILATION) # returns as None if tracks_mode is full
+                    selector_full = select_track(tracks,event.SCINTILATION,wv=self.dichroic_cut_on) # returns as None if tracks_mode is full
                     selector = scintillation
                 elif self.photons_only_type == 'reemit':
-                    selector_full = select_track(tracks,event.BULK_REEMIT) # returns as None if tracks_mode is full
+                    selector_full = select_track(tracks,event.BULK_REEMIT,wv=self.dichroic_cut_on) # returns as None if tracks_mode is full
                     selector = reemission
                 else:
                     raise Exception('Unknown only type: %s'%only)
