@@ -232,7 +232,7 @@ int propagate_to_boundary(Photon &p, State &s, curandState &rng,
     }
 
     if (absorption_distance <= scattering_distance) {
-        if (absorption_distance < s.distance_to_boundary) {
+        if (absorption_distance <= s.distance_to_boundary) {
             p.time += absorption_distance/(SPEED_OF_LIGHT/s.refractive_index1);
             p.position += absorption_distance*p.direction;
             
@@ -265,12 +265,8 @@ int propagate_to_boundary(Photon &p, State &s, curandState &rng,
                 p.direction = uniform_sphere(&rng);
                 p.polarization = cross(uniform_sphere(&rng), p.direction);
                 p.polarization /= norm(p.polarization);
+                p.last_hit_triangle = -1;
                 p.history |= BULK_REEMIT;
-                
-              // printf("Uniform Sample Reemit: ");
-              //  printf("%f",uniform_sample_reemit);
-              //  printf("Comp_Reemit_Prob");
-              //  printf("%f",comp_reemit_prob);
                 
                 return CONTINUE;
             } // photon is reemitted isotropically
@@ -691,13 +687,6 @@ propagate_at_surface(Photon &p, State &s, curandState &rng, Geometry *geometry,
             return BREAK;
         }
         else if (uniform_sample < absorb + detect) {
-            printf("Detect Array: ");
-            for (int i=0; i < sizeof(surface->detect); i++) {
-                printf("%f", surface->detect[i]);
-            }
-            printf("\n");
-            //printf("!propogate_surface, uniform_sample<absorb+detect\n");
-            //printf("detect %f surface->detect %f",detect,surface->detect);
             p.history |= SURFACE_DETECT;
             return BREAK;
         }
