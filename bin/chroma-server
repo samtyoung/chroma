@@ -54,3 +54,4 @@ if __name__ == '__main__':
     print('starting chroma server listening on', options.address)
     server = ChromaServer(options.address, detector)
     server.serve_forever()
+

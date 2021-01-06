@@ -267,7 +267,6 @@ int propagate_to_boundary(Photon &p, State &s, curandState &rng,
                 p.polarization /= norm(p.polarization);
                 p.last_hit_triangle = -1;
                 p.history |= BULK_REEMIT;
-                
                 return CONTINUE;
             } // photon is reemitted isotropically
             else {
@@ -294,7 +293,7 @@ int propagate_to_boundary(Photon &p, State &s, curandState &rng,
             p.last_hit_triangle = -1;
 
             return CONTINUE;
-        } // photon is scattered in material
+        } // photon is scattered in material1
     } // if scattering_distance < absorption_distance
 
     // Scale weight by absorption probability along this distance
@@ -537,6 +536,7 @@ propagate_complex(Photon &p, State &s, curandState &rng, Surface* surface, bool 
             p.history |= SURFACE_DETECT;
         else
             p.history |= SURFACE_ABSORB;
+
         return BREAK;
     }
     else if (uniform_sample < absorb + reflect || !surface->transmissive) {

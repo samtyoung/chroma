@@ -60,34 +60,7 @@ def encode_movie(dir):
     print('movie saved to %s.' % path)
 
 class Camera(multiprocessing.Process):
-    """The camera class is used to render a Geometry object.
-    
-    CONTROLS:
-       - KEYDOWN + LALT/RALT: Change motion to be course, find, or superfine
-       - F6: Reset location
-       - F7: No clue
-       - F11: Toggle fullscreen
-       - ESC: Exit visualization
-       - =: Add to alpha depth
-       - -: Subtract from alpha depth
-       - PAGEDOWN: Go down a layer
-       - PAGEUP: Go up a layer
-       - 3: Turn on and off 3D
-       - g: Turn on and off green magenta (3d?)
-       - F12: Screenshot
-       - F5: Not sure
-       - m: Make a movie
-  EVENTVIEWER CONTROLS:
-       - p: Change photon display mode (none, beg, end)
-       - t: Change track display mode (none, geant4, chroma, both)
-       - g: Change tracks (full, partial)
-       - Right Arrow: Next event
-       - Left Arrow: Previous event
-       - Period: Change PMT coloring display mode (geo, charge, time, hit, dichroicon)
-       - s: Toggle sum mode
-    
-    """
-    
+    "The camera class is used to render a Geometry object."
     def __init__(self, geometry, size=(800,600), device_id=None, background=0x00000000):
         '''
         background is a 0xAARRGGBB 32bit color to use for points at infinity. alpha=255 is opaque
@@ -484,23 +457,11 @@ class Camera(multiprocessing.Process):
     def process_event(self, event):
         if event.type == MOUSEBUTTONDOWN:
             if event.button == 4:
-                if pygame.key.get_mods() & KMOD_LALT:
-                    scaler = 500.0
-                elif pygame.key.get_mods() & (KMOD_LSHIFT | KMOD_RSHIFT):
-                    scaler = 100.0
-                else:
-                    scaler = 10.0
-                v = self.scale*np.cross(self.axis1,self.axis2)/scaler
+                v = self.scale*np.cross(self.axis1,self.axis2)/10.0
                 self.translate(v)
 
             elif event.button == 5:
-                if pygame.key.get_mods() & KMOD_LALT:
-                    scaler = 500.0
-                elif pygame.key.get_mods() & (KMOD_LSHIFT | KMOD_RSHIFT):
-                    scaler = 100.0
-                else:
-                    scaler = 10.0
-                v = -self.scale*np.cross(self.axis1,self.axis2)/scaler
+                v = -self.scale*np.cross(self.axis1,self.axis2)/10.0
                 self.translate(v)
 
             elif event.button == 1:
@@ -523,11 +484,7 @@ class Camera(multiprocessing.Process):
             mouse_direction /= np.linalg.norm(mouse_direction)
 
             if pygame.key.get_mods() & (KMOD_LSHIFT | KMOD_RSHIFT):
-                if pygame.key.get_mods() & (KMOD_LALT | KMOD_RALT):
-                    scaler = 100.0
-                else:
-                    scaler = 1.
-                v = -mouse_direction*self.scale*length/float(self.width)/scaler
+                v = -mouse_direction*self.scale*length/float(self.width)
                 self.translate(v)
             else:
                 phi = np.float32(2*np.pi*length/float(self.width))
@@ -544,15 +501,12 @@ class Camera(multiprocessing.Process):
                 if self.motion == 'coarse':
                     self.scale = self.mesh_diagonal_norm/20.0
                     self.motion = 'fine'
-                    print(self.motion)
                 elif self.motion == 'fine':
                     self.scale = self.mesh_diagonal_norm/400.0
                     self.motion = 'superfine'
-                    print(self.motion)
                 elif self.motion == 'superfine':
                     self.scale = self.mesh_diagonal_norm
                     self.motion = 'coarse'
-                    print(self.motion)
 
             elif event.key == K_F6:
                 self.clear_xyz_lookup()
@@ -746,7 +700,6 @@ def gen_rot(a,b):
     v = np.cross(a,b)
     c = np.arccos(-np.dot(a,b))
     return make_rotation_matrix(c,v)
-        
     
 class EventViewer(Camera):
 
@@ -762,23 +715,20 @@ class EventViewer(Camera):
         self.sum_mode = False
         self.photon_display_mode_iter = itertools.cycle(['none','beg','end'])
         self.photon_display_mode = next(self.photon_display_mode_iter)
-        self.track_display_mode_iter = itertools.cycle(['none','chroma','geant4','both'])
+        self.track_display_mode_iter = itertools.cycle(['none','geant4','chroma','both'])
         self.track_display_mode = next(self.track_display_mode_iter)
-        self.tracks_mode_iter = itertools.cycle(['partial','full'])
-        self.tracks_mode = next(self.track_display_mode_iter)
+        
         
         ''' photons_max will randomly select at most that many photons
             photons_max_steps truncates all photon tracks to that number of steps
             photons_only_type can be set to 'cher', 'scint', or 'reemit' 
             photons_detected_only will show only detected photon tracks 
-            photons_track_size controls the track size of the photons
-            dichroic_cut_on is the cut-on wavelength of dichroic filters (used to debug bulk_reemit leak)'''
+            photons_track_size controls the track size of the photons'''
         self.photons_max = 1000
         self.photons_max_steps = 20
         self.photons_only_type = None
         self.photons_detected_only = False
         self.photons_track_size = 0.1
-        self.dichroic_cut_on = None
 
     def render_photon_track(self,geometry,photon_track,sz=1.0,color='wavelength'):
         origin = photon_track.pos[:-1]
@@ -842,6 +792,7 @@ class EventViewer(Camera):
         for p,d,w in zip(subset.pos,subset.dir,subset.wavelengths):
             geometry.add_solid(marker, displacement=p, rotation=gen_rot([0,1,0],d))
 
+
     def render_mc_info(self):
         #need to render photon tracking info if available
         
@@ -891,49 +842,23 @@ class EventViewer(Camera):
             scintillation = np.asarray([has(track.flags[0],event.SCINTILLATION) and not has(track.flags[-1],event.BULK_REEMIT) for track in tracks])
             reemission = np.asarray([has(track.flags[-1],event.BULK_REEMIT) for track in tracks])
             if self.photons_only_type is not None:
-                def select_track(tracks,flag,wv=None):
-                    if self.tracks_mode == 'full':
-                        return None
-                    else:
-                        select_full = []
-                        if wv: 
-                            print(f'Only showing tracks < {wv}nm')
-                        for track in tracks:
-                                    s = []
-                                    for t,w in zip(track.flags,track.wavelengths):
-                                        if wv:
-                                            s.append(has(t,event.BULK_REEMIT) if w<wv else False) # let's only look at undetectable wavelengths
-                                        else:
-                                            s.append(has(t,event.BULK_REEMIT))
-                                    select_full.append(s)
-                        return select_full
                 if self.photons_only_type == 'cher':
-                    selector_full = select_track(tracks,event.CHEREKOV,wv=self.dichroic_cut_on)  # returns as None if tracks_mode is full
                     selector = cherenkov
                 elif self.photons_only_type == 'scint':
-                    selector_full = select_track(tracks,event.SCINTILATION,wv=self.dichroic_cut_on) # returns as None if tracks_mode is full
                     selector = scintillation
                 elif self.photons_only_type == 'reemit':
-                    selector_full = select_track(tracks,event.BULK_REEMIT,wv=self.dichroic_cut_on) # returns as None if tracks_mode is full
                     selector = reemission
                 else:
                     raise Exception('Unknown only type: %s'%only)
-                    
+                tracks = [t for t,m in zip(tracks,selector) if m]
                 cherenkov = cherenkov[selector]
                 scintillation = scintillation[selector]
                 reemission = reemission[selector]
-                    
-                if self.tracks_mode == 'partial':
-                    print(f'Attempting to only show all photons that contain {self.photons_only_type}.')
-                    displayed_tracks = [tracks[i][selector_full[i]] for i in range(len(tracks))]
-                else:
-                    print(f'Printing full tracks that have a photon that contains {self.photons_only_type}.')
-                    displayed_tracks = [t for t,m in zip(tracks,selector) if m]
             nphotons = len(tracks)
             prob = self.photons_max/nphotons if self.photons_max is not None else 1.0
             selector = np.random.random(len(tracks)) < prob
             nphotons = np.count_nonzero(selector)
-            for i,track in ((i,t) for i,(s,t) in enumerate(zip(selector,displayed_tracks)) if s):
+            for i,track in ((i,t) for i,(s,t) in enumerate(zip(selector,tracks)) if s):
                 if cherenkov[i]:
                     color = [255,0,0]
                 elif scintillation[i]:
@@ -949,6 +874,7 @@ class EventViewer(Camera):
                 geometry = create_geometry_from_obj(geometry)
                 gpu_geometry = gpu.GPUGeometry(geometry)
                 self.gpu_geometries.append(gpu_geometry)
+            
 
     def sum_events(self):
         print('Summing events in file...')
@@ -1040,14 +966,6 @@ class EventViewer(Camera):
             if event.key == K_t:
                 self.track_display_mode = next(self.track_display_mode_iter)
                 print(self.track_display_mode)
-                self.render_mc_info()
-                self.update()
-                return
-            
-            # %%%%%%%%% NEW %%%%%%%%%
-            if event.key == K_g:
-                self.tracks_mode = next(self.tracks_mode_iter)
-                print(self.tracks_mode)
                 self.render_mc_info()
                 self.update()
                 return
